@@ -32,6 +32,7 @@ class ScenarioRequest(BaseModel):
     referral_code: str = Field(min_length=1, max_length=128)
     users: int = Field(default=5, ge=1, le=100)
     seed: int = Field(default=42, ge=0, le=2_147_483_647)
+    submit_to_target: bool = False
 
 
 class TestEvent(BaseModel):
@@ -48,4 +49,6 @@ class TestResult(BaseModel):
     status: str
     users: list[UserProfile]
     events: list[TestEvent]
-    notes: list[str]
+    observed: dict | None = None
+    result: str | None = None
+    notes: list[str] = []
