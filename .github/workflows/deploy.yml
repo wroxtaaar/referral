@@ -12,9 +12,11 @@ concurrency:
 
 jobs:
   deploy:
+    name: Deploy to Oracle VPS
     runs-on: ubuntu-24.04
+
     steps:
-      - name: Deploy to VPS
+      - name: 1. Check VPS SSH connection
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -22,11 +24,110 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             set -e
-            cd "${{ vars.VPS_APP_DIR || '/home/ubuntu/referral' }}"
+            echo "Connected to VPS"
+            echo "Host: $(hostname)"
+            echo "User: $(whoami)"
+            echo "Docker: $(docker --version)"
+            echo "Compose: $(docker compose version)"
+
+      - name: 2. Check application directory
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            APP_DIR="${{ vars.VPS_APP_DIR || '/home/ubuntu/referral' }}"
+            echo "Application directory: $APP_DIR"
+            test -d "$APP_DIR"
+            cd "$APP_DIR"
+            echo "Current directory: $(pwd)"
+            git status --short
+
+      - name: 3. Sync repository
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            APP_DIR="${{ vars.VPS_APP_DIR || '/home/ubuntu/referral' }}"
+            cd "$APP_DIR"
+            echo "Fetching origin/main..."
             git fetch origin main
+            echo "Resetting to origin/main..."
             git reset --hard origin/main
-            docker compose up -d --build --remove-orphans
+            echo "Deployed commit:"
+            git log -1 --oneline
+
+      - name: 4. Build Docker image
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            set -e
+            APP_DIR="${{ vars.VPS_APP_DIR || '/home/ubuntu/referral' }}"
+            cd "$APP_DIR"
+            echo "Building Docker image..."
+            docker compose build --pull
+
+      - name: 5. Start application
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            set -e
+            APP_DIR="${{ vars.VPS_APP_DIR || '/home/ubuntu/referral' }}"
+            cd "$APP_DIR"
+            echo "Starting containers..."
+            docker compose up -d --remove-orphans
+            echo "Container status:"
+            docker compose ps
+
+      - name: 6. Wait for application
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            echo "Waiting for application to start..."
             sleep 5
+
+      - name: 7. Health check
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            echo "Checking http://127.0.0.1:8000/api/health"
             curl --fail --silent --show-error http://127.0.0.1:8000/api/health
             echo
+            echo "Health check passed"
+
+      - name: 8. Final container status
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            APP_DIR="${{ vars.VPS_APP_DIR || '/home/ubuntu/referral' }}"
+            cd "$APP_DIR"
+            echo "Final container status:"
             docker compose ps
+            echo
+            echo "Recent application logs:"
+            docker compose logs --tail=30 referral-lab
