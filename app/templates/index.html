@@ -1,17 +1,1 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Referral Security Lab</title>
-<style>body{font-family:system-ui;margin:0;background:#f5f6f8;color:#17191d}main{max-width:1100px;margin:auto;padding:32px}.hero{display:flex;justify-content:space-between;align-items:start}.grid{display:grid;grid-template-columns:1fr 1.2fr;gap:18px}.card{background:white;border:1px solid #e1e4ea;border-radius:14px;padding:18px;margin-top:18px}label{display:block;font-size:13px;font-weight:600;margin:10px 0 5px}input,select,button{width:100%;box-sizing:border-box;padding:10px;border:1px solid #cdd2da;border-radius:9px;font:inherit}button{margin-top:12px;cursor:pointer}pre{background:#11151b;color:#eef3f8;border-radius:10px;padding:14px;white-space:pre-wrap;max-height:600px;overflow:auto}.pill{font-size:12px;padding:5px 9px;border-radius:99px;background:#edf0f5}table{width:100%;border-collapse:collapse}th,td{padding:9px;text-align:left;border-bottom:1px solid #eceef2;font-size:13px}@media(max-width:800px){.grid{grid-template-columns:1fr}}</style>
-</head><body><main>
-<div class="hero"><div><h1>Referral Security Lab</h1><p>Authorized staging/test referral-abuse simulator.</p></div><span class="pill">{{ "Target integration enabled" if target_enabled else "Local generation only" }}</span></div>
-<div class="grid"><section class="card"><h2>Test scenario</h2><form id="form">
-<label>Scenario</label><select id="scenario"><option>legit-referral</option><option>self-referral</option><option>rapid-signups</option><option>referral-replay</option><option>shared-device</option><option>shared-network</option><option>referral-chain</option></select>
-<label>Referral code</label><input id="ref" value="TEST-REFERRAL" maxlength="128">
-<label>Users</label><input id="users" type="number" min="1" max="100" value="5">
-<label>Seed</label><input id="seed" type="number" min="0" value="42">
-<button>Generate test</button></form></section>
-<section class="card"><h2>Result</h2><pre id="result">No test generated.</pre></section></div>
-<section class="card"><h2>Recent runs</h2><table><thead><tr><th>Run</th><th>Scenario</th><th>Expected</th><th>Status</th></tr></thead><tbody id="runs"></tbody></table></section>
-</main><script>
-async function refresh(){const r=await fetch("/api/runs");const d=await r.json();document.getElementById("runs").innerHTML=d.runs.map(x=>`<tr><td>${x.run_id}</td><td>${x.scenario}</td><td>${x.expected}</td><td>${x.status}</td></tr>`).join("")||"<tr><td colspan='4'>No runs yet.</td></tr>"}
-document.getElementById("form").addEventListener("submit",async e=>{e.preventDefault();const body={scenario:scenario.value,referral_code:ref.value.trim(),users:Number(users.value),seed:Number(seed.value)};result.textContent="Generating...";const r=await fetch("/api/runs",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});const d=await r.json();result.textContent=JSON.stringify(d,null,2);refresh()});refresh();
-</script></body></html>
+<!doctype html><html><body><h1>Referral Security Lab</h1><p>Authorized staging/test simulator.</p></body></html>

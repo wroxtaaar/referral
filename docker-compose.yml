@@ -1,0 +1,8 @@
+services:
+  referral-lab:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      TARGET_ENV: staging
+      TARGET_BASE_URL: http://127.0.0.1:9000
