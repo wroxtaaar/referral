@@ -1,1 +1,42 @@
-<!doctype html><html><body><h1>Referral Security Lab</h1><p>Authorized staging/test simulator.</p></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Referral Security Lab</title>
+<style>
+:root{font-family:system-ui,-apple-system,sans-serif;color:#17202a;background:#f4f6f8}
+body{margin:0}main{max-width:1180px;margin:auto;padding:28px}.top{display:flex;justify-content:space-between;gap:16px;align-items:start}
+.grid{display:grid;grid-template-columns:360px 1fr;gap:18px}.card{background:#fff;border:1px solid #dfe4ea;border-radius:14px;padding:18px;margin-top:18px;box-shadow:0 2px 8px #00000008}
+label{display:block;font-size:13px;font-weight:650;margin:12px 0 6px}
+input,select,button{width:100%;box-sizing:border-box;padding:11px;border:1px solid #cbd2da;border-radius:9px;font:inherit}
+button{margin-top:14px;background:#17202a;color:white;border:0;cursor:pointer}.pill{padding:6px 10px;border-radius:999px;background:#e9edf2;font-size:12px}
+pre{background:#11161c;color:#eef2f5;border-radius:10px;padding:14px;min-height:420px;max-height:650px;overflow:auto}
+table{width:100%;border-collapse:collapse}th,td{padding:10px 8px;border-bottom:1px solid #edf0f3;text-align:left;font-size:13px}
+small{color:#68737e}@media(max-width:800px){.grid{grid-template-columns:1fr}.top{display:block}}
+</style>
+</head>
+<body><main>
+<div class="top"><div><h1>Referral Security Lab</h1><p>Authorized staging/test referral-abuse simulator.</p></div><span class="pill">{{ "Target integration enabled" if target_enabled else "Local generation only" }}</span></div>
+<div class="grid">
+<section class="card"><h2>Run scenario</h2>
+<form id="form">
+<label>Scenario</label><select id="scenario">
+<option>legit-referral</option><option>self-referral</option><option>rapid-signups</option><option>referral-replay</option><option>shared-device</option><option>shared-network</option><option>referral-chain</option>
+</select>
+<label>Referral code</label><input id="ref" value="TEST-REFERRAL" maxlength="128">
+<label>Synthetic users</label><input id="users" type="number" min="1" max="100" value="5">
+<label>Seed</label><input id="seed" type="number" min="0" value="42">
+<label><input id="submit" type="checkbox" style="width:auto"> Submit to configured staging/test target</label>
+<button>Run test</button>
+</form><small>Generated identities use example.test. No real email or network rotation.</small>
+</section>
+<section class="card"><h2>Result</h2><pre id="result">No test generated.</pre></section>
+</div>
+<section class="card"><h2>Recent runs</h2><table><thead><tr><th>Run</th><th>Scenario</th><th>Expected</th><th>Status</th><th>Result</th></tr></thead><tbody id="runs"></tbody></table></section>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+async function refresh(){const r=await fetch('/api/runs');const d=await r.json();$('runs').innerHTML=d.runs.map(x=>'<tr><td>'+x.run_id+'</td><td>'+x.scenario+'</td><td>'+x.expected+'</td><td>'+x.status+'</td><td>'+((x.result)||'—')+'</td></tr>').join('')||'<tr><td colspan="5">No runs yet.</td></tr>'}
+$('form').addEventListener('submit',async e=>{e.preventDefault();$('result').textContent='Running...';const body={scenario:$('scenario').value,referral_code:$('ref').value.trim(),users:Number($('users').value),seed:Number($('seed').value),submit_to_target:$('submit').checked};const r=await fetch('/api/runs',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const d=await r.json();$('result').textContent=JSON.stringify(d,null,2);refresh()});refresh();
+</script>
+</body></html>
